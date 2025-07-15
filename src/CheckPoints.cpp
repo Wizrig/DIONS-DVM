@@ -200,8 +200,8 @@ bool AcceptPendingSyncCheckpoint()
 
     if (!checkpointMessage.IsNull())
     {
-      BOOST_FOREACH(CNode* pnode, vNodes)
-      checkpointMessage.RelayTo(pnode);
+      BOOST_FOREACH(CNodeRef pnode, vNodes)
+      checkpointMessage.RelayTo(pnode.get());
     }
 
     return true;
@@ -385,8 +385,8 @@ bool SendSyncCheckpoint(uint256 hashCheckpoint)
 
   {
     LOCK(cs_vNodes);
-    BOOST_FOREACH(CNode* pnode, vNodes)
-    checkpoint.RelayTo(pnode);
+    BOOST_FOREACH(CNodeRef pnode, vNodes)
+    checkpoint.RelayTo(pnode.get());
   }
 
   return true;
