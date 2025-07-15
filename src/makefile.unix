@@ -3,7 +3,10 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 LINK:=$(CXX)
-ARCH:=$(system lscpu | head -n 1 | awk '{print $2}')
+# Detect CPU architecture in a portable manner. Allow overriding ARCH from the
+# environment or command line if required. "uname -m" works across most Unix
+# platforms, unlike lscpu which might not be available.
+ARCH?=$(shell uname -m)
 
 DEFS=-DBOOST_SPIRIT_THREADSAFE
 DEFS += -DBOOST_BIND_GLOBAL_PLACEHOLDERS
