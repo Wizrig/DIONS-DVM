@@ -11,8 +11,6 @@
 #include "KeyStore.h"
 #include "BigNum.h"
 
-using namespace std;
-
 typedef std::vector<unsigned char> valtype;
 
 class CTransaction;
@@ -20,7 +18,7 @@ class CTransaction;
 std::string Hash160ToAddress(uint160 hash160);
 extern bool AddressToHash160(const char* psz, uint160& hash160Ret);
 extern bool AddressToHash160(const std::string& str, uint160& hash160Ret);
-extern string Hash160ToAddress(uint160 hash160);
+extern std::string Hash160ToAddress(uint160 hash160);
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 1000000;
 static const unsigned int MAX_OP_RETURN_RELAY = 40;
 
