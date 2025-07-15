@@ -4,6 +4,7 @@
 #include <boost/array.hpp>
 #include <boost/foreach.hpp>
 #include <openssl/rand.h>
+#include <memory>
 
 #ifndef WIN32
 #include <arpa/inet.h>
@@ -18,6 +19,8 @@ class CRequestTracker;
 class CNode;
 class CBlockIndex;
 extern int nBestHeight;
+
+typedef std::shared_ptr<CNode> CNodeRef;
 
 
 
@@ -34,15 +37,15 @@ void AddOneShot(std::string strDest);
 bool RecvLine(SOCKET hSocket, std::string& strLine);
 bool GetMyExternalIP(CNetAddr& ipRet);
 void AddressCurrentlyConnected(const CService& addr);
-CNode* FindNode(const CNetAddr& ip);
-CNode* FindNode(const CService& ip);
-CNode* ConnectNode(CAddress addrConnect, const char *strDest = NULL);
+CNodeRef FindNode(const CNetAddr& ip);
+CNodeRef FindNode(const CService& ip);
+CNodeRef ConnectNode(CAddress addrConnect, const char *strDest = NULL);
 void MapPort();
 unsigned short GetListenPort();
 bool BindListenPort(const CService &bindAddr, std::string& strError=REF(std::string()));
 void StartNode(void* parg);
 bool StopNode();
-void SocketSendData(CNode *pnode);
+void SocketSendData(CNodeRef pnode);
 
 enum
 {
@@ -118,7 +121,7 @@ extern CAddress addrSeenByPeer;
 extern boost::array<int, THREAD_MAX> vnThreadsRunning;
 extern CAddrMan addrman;
 
-extern std::vector<CNode*> vNodes;
+extern std::vector<CNodeRef> vNodes;
 extern CCriticalSection cs_vNodes;
 extern std::map<CInv, CDataStream> mapRelay;
 extern std::deque<std::pair<int64_t, CInv> > vRelayExpiration;
@@ -190,7 +193,7 @@ public:
 
 
 
-class CNode
+class CNode : public std::enable_shared_from_this<CNode>
 {
 public:
 
@@ -222,7 +225,6 @@ public:
   bool fSuccessfullyConnected;
   bool fDisconnect;
   CSemaphoreGrant grantOutbound;
-  int nRefCount;
 protected:
 
 
@@ -271,7 +273,6 @@ public:
     fNetworkNode = false;
     fSuccessfullyConnected = false;
     fDisconnect = false;
-    nRefCount = 0;
     nSendSize = 0;
     nSendOffset = 0;
     hashContinue = 0;
@@ -302,14 +303,8 @@ public:
 private:
   CNode(const CNode&);
   void operator=(const CNode&);
+
 public:
-
-
-  int GetRefCount()
-  {
-    assert(nRefCount >= 0);
-    return nRefCount;
-  }
 
 
   unsigned int GetTotalRecvSize()
@@ -331,16 +326,7 @@ public:
     msg.SetVersion(nVersionIn);
   }
 
-  CNode* AddRef()
-  {
-    nRefCount++;
-    return this;
-  }
 
-  void Release()
-  {
-    nRefCount--;
-  }
 
 
 
@@ -464,7 +450,7 @@ public:
 
     if (it == vSendMsg.begin())
     {
-      SocketSendData(this);
+      SocketSendData(shared_from_this());
     }
 
     LEAVE_CRITICAL_SECTION(cs_vSend);
@@ -695,7 +681,7 @@ inline void RelayInventory(const CInv& inv)
 
   {
     LOCK(cs_vNodes);
-    BOOST_FOREACH(CNode* pnode, vNodes)
+    BOOST_FOREACH(CNodeRef pnode, vNodes)
     pnode->PushInventory(inv);
   }
 }

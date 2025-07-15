@@ -6,6 +6,7 @@
 #include "core/strlcpy.h"
 #include "AddrMan.h"
 #include "UIInterface.h"
+#include <memory>
 #ifdef WIN32
 #include <string.h>
 #endif
@@ -32,13 +33,13 @@ static CCriticalSection cs_mapLocalHost;
 static map<CNetAddr, LocalServiceInfo> mapLocalHost;
 static bool vfReachable[NET_MAX] = {};
 static bool vfLimited[NET_MAX] = {};
-static CNode* pnodeLocalHost = NULL;
+static CNodeRef pnodeLocalHost;
 CAddress addrSeenByPeer(CService("0.0.0.0", 0), nLocalServices);
 uint64_t nLocalHostNonce = 0;
 boost::array<int, THREAD_MAX> vnThreadsRunning;
 static std::vector<SOCKET> vhListenSocket;
 CAddrMan addrman;
-vector<CNode*> vNodes;
+vector<CNodeRef> vNodes;
 CCriticalSection cs_vNodes;
 map<CInv, CDataStream> mapRelay;
 deque<pair<int64_t, CInv> > vRelayExpiration;
@@ -183,7 +184,7 @@ bool RecvLine(SOCKET hSocket, string& strLine)
 void static AdvertizeLocal()
 {
   LOCK(cs_vNodes);
-  BOOST_FOREACH(CNode* pnode, vNodes)
+  BOOST_FOREACH(CNodeRef pnode, vNodes)
   {
     if (pnode->fSuccessfullyConnected)
     {
@@ -431,45 +432,45 @@ void AddressCurrentlyConnected(const CService& addr)
 {
   addrman.Connected(addr);
 }
-CNode* FindNode(const CNetAddr& ip)
+CNodeRef FindNode(const CNetAddr& ip)
 {
   {
     LOCK(cs_vNodes);
-    BOOST_FOREACH(CNode* pnode, vNodes)
+    BOOST_FOREACH(CNodeRef pnode, vNodes)
 
     if ((CNetAddr)pnode->addr == ip)
     {
-      return (pnode);
+      return pnode;
     }
   }
   return NULL;
 }
-CNode* FindNode(std::string addrName)
+CNodeRef FindNode(std::string addrName)
 {
   LOCK(cs_vNodes);
-  BOOST_FOREACH(CNode* pnode, vNodes)
+  BOOST_FOREACH(CNodeRef pnode, vNodes)
 
   if (pnode->addrName == addrName)
   {
-    return (pnode);
+    return pnode;
   }
 
   return NULL;
 }
-CNode* FindNode(const CService& addr)
+CNodeRef FindNode(const CService& addr)
 {
   {
     LOCK(cs_vNodes);
-    BOOST_FOREACH(CNode* pnode, vNodes)
+    BOOST_FOREACH(CNodeRef pnode, vNodes)
 
     if ((CService)pnode->addr == addr)
     {
-      return (pnode);
+      return pnode;
     }
   }
   return NULL;
 }
-CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
+CNodeRef ConnectNode(CAddress addrConnect, const char *pszDest)
 {
   if (pszDest == NULL)
   {
@@ -478,11 +479,10 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
       return NULL;
     }
 
-    CNode* pnode = FindNode((CService)addrConnect);
+    CNodeRef pnode = FindNode((CService)addrConnect);
 
     if (pnode)
     {
-      pnode->AddRef();
       return pnode;
     }
   }
@@ -512,8 +512,7 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
     }
 
 #endif
-    CNode* pnode = new CNode(hSocket, addrConnect, pszDest ? pszDest : "", false);
-    pnode->AddRef();
+    CNodeRef pnode = std::make_shared<CNode>(hSocket, addrConnect, pszDest ? pszDest : "", false);
     {
       LOCK(cs_vNodes);
       vNodes.push_back(pnode);
@@ -702,7 +701,7 @@ int CNetMessage::readData(const char *pch, unsigned int nBytes)
   nDataPos += nCopy;
   return nCopy;
 }
-void SocketSendData(CNode *pnode)
+void SocketSendData(CNodeRef pnode)
 {
   std::deque<CSerializeData>::iterator it = pnode->vSendMsg.begin();
 
@@ -779,35 +778,30 @@ void ThreadSocketHandler(void* parg)
 void ThreadSocketHandler2(void* parg)
 {
   printf("ThreadSocketHandler started\n");
-  list<CNode*> vNodesDisconnected;
+  list<CNodeRef> vNodesDisconnected;
   unsigned int nPrevNodeCount = 0;
 
   while (true)
   {
     {
       LOCK(cs_vNodes);
-      vector<CNode*> vNodesCopy = vNodes;
-      BOOST_FOREACH(CNode* pnode, vNodesCopy)
+      vector<CNodeRef> vNodesCopy = vNodes;
+      BOOST_FOREACH(CNodeRef pnode, vNodesCopy)
       {
         if (pnode->fDisconnect ||
-            (pnode->GetRefCount() <= 0 && pnode->vRecvMsg.empty() && pnode->nSendSize == 0 && pnode->ssSend.empty()))
+            (pnode.use_count() == 1 && pnode->vRecvMsg.empty() && pnode->nSendSize == 0 && pnode->ssSend.empty()))
         {
           vNodes.erase(remove(vNodes.begin(), vNodes.end(), pnode), vNodes.end());
           pnode->grantOutbound.Release();
           pnode->CloseSocketDisconnect();
 
-          if (pnode->fNetworkNode || pnode->fInbound)
-          {
-            pnode->Release();
-          }
-
           vNodesDisconnected.push_back(pnode);
         }
       }
-      list<CNode*> vNodesDisconnectedCopy = vNodesDisconnected;
-      BOOST_FOREACH(CNode* pnode, vNodesDisconnectedCopy)
+      list<CNodeRef> vNodesDisconnectedCopy = vNodesDisconnected;
+      BOOST_FOREACH(CNodeRef pnode, vNodesDisconnectedCopy)
       {
-        if (pnode->GetRefCount() <= 0)
+        if (pnode.use_count() == 1)
         {
           bool fDelete = false;
           {
@@ -837,7 +831,7 @@ void ThreadSocketHandler2(void* parg)
           if (fDelete)
           {
             vNodesDisconnected.remove(pnode);
-            delete pnode;
+            // pnode will be freed when no shared_ptr references remain
           }
         }
       }
@@ -880,7 +874,7 @@ void ThreadSocketHandler2(void* parg)
 
     {
       LOCK(cs_vNodes);
-      BOOST_FOREACH(CNode* pnode, vNodes)
+      BOOST_FOREACH(CNodeRef pnode, vNodes)
       {
         if (pnode->hSocket == INVALID_SOCKET)
         {
@@ -955,7 +949,7 @@ void ThreadSocketHandler2(void* parg)
 
       {
         LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
+        BOOST_FOREACH(CNodeRef pnode, vNodes)
 
         if (pnode->fInbound)
         {
@@ -984,8 +978,7 @@ void ThreadSocketHandler2(void* parg)
       else
       {
         printf("accepted connection %s\n", addr.ToString().c_str());
-        CNode* pnode = new CNode(hSocket, addr, "", true);
-        pnode->AddRef();
+        CNodeRef pnode = std::make_shared<CNode>(hSocket, addr, "", true);
         {
           LOCK(cs_vNodes);
           vNodes.push_back(pnode);
@@ -993,14 +986,12 @@ void ThreadSocketHandler2(void* parg)
       }
     }
 
-    vector<CNode*> vNodesCopy;
+    vector<CNodeRef> vNodesCopy;
     {
       LOCK(cs_vNodes);
       vNodesCopy = vNodes;
-      BOOST_FOREACH(CNode* pnode, vNodesCopy)
-      pnode->AddRef();
     }
-    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+    BOOST_FOREACH(CNodeRef pnode, vNodesCopy)
     {
       if (fShutdown)
       {
@@ -1109,8 +1100,7 @@ void ThreadSocketHandler2(void* parg)
     }
     {
       LOCK(cs_vNodes);
-      BOOST_FOREACH(CNode* pnode, vNodesCopy)
-      pnode->Release();
+      // shared_ptr handles reference counting
     }
     MilliSleep(10);
   }
@@ -1279,7 +1269,7 @@ void ThreadOpenConnections2(void* parg)
     set<vector<unsigned char> > setConnected;
     {
       LOCK(cs_vNodes);
-      BOOST_FOREACH(CNode* pnode, vNodes)
+      BOOST_FOREACH(CNodeRef pnode, vNodes)
       {
         if (!pnode->fInbound)
         {
@@ -1404,7 +1394,7 @@ void ThreadOpenAddedConnections2(void* parg)
     vector<vector<CService> > vservConnectAddresses = vservAddressesToAdd;
     {
       LOCK(cs_vNodes);
-      BOOST_FOREACH(CNode* pnode, vNodes)
+      BOOST_FOREACH(CNodeRef pnode, vNodes)
 
       for (vector<vector<CService> >::iterator it = vservConnectAddresses.begin(); it != vservConnectAddresses.end(); it++)
         BOOST_FOREACH(CService& addrNode, *(it))
@@ -1463,7 +1453,7 @@ bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOu
   }
 
   vnThreadsRunning[THREAD_OPENCONNECTIONS]--;
-  CNode* pnode = ConnectNode(addrConnect, strDest);
+  CNodeRef pnode = ConnectNode(addrConnect, strDest);
   vnThreadsRunning[THREAD_OPENCONNECTIONS]++;
 
   if (fShutdown)
@@ -1520,21 +1510,19 @@ void ThreadMessageHandler2(void* parg)
 
   while (!fShutdown)
   {
-    vector<CNode*> vNodesCopy;
+    vector<CNodeRef> vNodesCopy;
     {
       LOCK(cs_vNodes);
       vNodesCopy = vNodes;
-      BOOST_FOREACH(CNode* pnode, vNodesCopy)
-      pnode->AddRef();
     }
-    CNode* pnodeTrickle = NULL;
+    CNodeRef pnodeTrickle;
 
     if (!vNodesCopy.empty())
     {
       pnodeTrickle = vNodesCopy[GetRand(vNodesCopy.size())];
     }
 
-    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+    BOOST_FOREACH(CNodeRef pnode, vNodesCopy)
     {
       if (pnode->fDisconnect)
       {
@@ -1545,7 +1533,7 @@ void ThreadMessageHandler2(void* parg)
         TRY_LOCK(pnode->cs_vRecvMsg, lockRecv);
 
         if (lockRecv)
-          if (!ProcessMessages(pnode))
+          if (!ProcessMessages(pnode.get()))
           {
             pnode->CloseSocketDisconnect();
           }
@@ -1561,7 +1549,7 @@ void ThreadMessageHandler2(void* parg)
 
         if (lockSend)
         {
-          SendMessages(pnode, pnode == pnodeTrickle);
+          SendMessages(pnode.get(), pnode == pnodeTrickle);
         }
       }
 
@@ -1572,8 +1560,7 @@ void ThreadMessageHandler2(void* parg)
     }
     {
       LOCK(cs_vNodes);
-      BOOST_FOREACH(CNode* pnode, vNodesCopy)
-      pnode->Release();
+      // shared_ptr handles reference counting
     }
     vnThreadsRunning[THREAD_MESSAGEHANDLER]--;
     MilliSleep(100);
@@ -1787,9 +1774,9 @@ void StartNode(void* parg)
     semOutbound = new CSemaphore(nMaxOutbound);
   }
 
-  if (pnodeLocalHost == NULL)
+  if (!pnodeLocalHost)
   {
-    pnodeLocalHost = new CNode(INVALID_SOCKET, CAddress(CService("127.0.0.1", 0), nLocalServices));
+    pnodeLocalHost = std::make_shared<CNode>(INVALID_SOCKET, CAddress(CService("127.0.0.1", 0), nLocalServices));
   }
 
   Discover();
@@ -1922,7 +1909,7 @@ public:
   }
   ~CNetCleanup()
   {
-    BOOST_FOREACH(CNode* pnode, vNodes)
+    BOOST_FOREACH(CNodeRef pnode, vNodes)
 
     if (pnode->hSocket != INVALID_SOCKET)
     {
