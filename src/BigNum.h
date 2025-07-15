@@ -529,9 +529,10 @@ public:
     }
     if (fNegative)
     {
-      BIGNUM* zero=0;;
+      BIGNUM* zero = BN_new();
       BN_zero(zero);
       BN_sub(this->bn_, zero, this->bn_);
+      BN_free(zero);
     }
   }
 
