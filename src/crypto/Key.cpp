@@ -257,11 +257,7 @@ int ECDSA_SIG_recover_key_GFp(EC_KEY *eckey, ECDSA_SIG *ecsig, const unsigned ch
 
   zero = BN_CTX_get(ctx);
 
-  if (!BN_zero(zero))
-  {
-    ret=-1;
-    goto err;
-  }
+  BN_zero(zero);
 
   if (!BN_mod_sub(e, zero, e, order, ctx))
   {
