@@ -5,6 +5,7 @@
 #include "Coordinate.h"
 #include "CoordinatePatch.h"
 #include "RayShade.h"
+#include <string>
 
 class Relay : InterfaceCrypt
 {
@@ -13,7 +14,7 @@ public:
   {
   }
 
-  Relay(string& s)
+  Relay(std::string& s)
   {
     this->r_ = s;
   };
@@ -28,15 +29,15 @@ public:
   }
   inline virtual void open() {}
   inline virtual void close() {}
-  inline virtual string alias()
+  inline virtual std::string alias()
   {
     return "";
   }
-  inline virtual string ctrl_()
+  inline virtual std::string ctrl_()
   {
     return this->r_;
   }
-  inline virtual void ctrl(string& c)
+  inline virtual void ctrl(std::string& c)
   {
     this->r_ = c;
   }
@@ -48,7 +49,7 @@ public:
   )
 
 private:
-  string r_;
-  string locator_;
+  std::string r_;
+  std::string locator_;
 };
 

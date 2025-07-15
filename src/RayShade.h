@@ -1,21 +1,23 @@
 #pragma once
 
 #include "InterfaceCrypt.h"
+#include <string>
+#include <vector>
 
 
 struct __pq__
 {
-  vector<unsigned char> __fq1;
-  vector<unsigned char> __fq9;
-  vector<unsigned char> __fq0;
-  vector<unsigned char> __fq2;
-  vector<unsigned char> __fq5;
+  std::vector<unsigned char> __fq1;
+  std::vector<unsigned char> __fq9;
+  std::vector<unsigned char> __fq0;
+  std::vector<unsigned char> __fq2;
+  std::vector<unsigned char> __fq5;
 };
 
 struct __inv__
 {
-  vector<unsigned char> __inv7;
-  vector<unsigned char> __inv1;
+  std::vector<unsigned char> __inv7;
+  std::vector<unsigned char> __inv1;
 };
 
 class RayShade : InterfaceCrypt
@@ -28,7 +30,7 @@ public:
   {
   }
 
-  RayShade(string& s)
+  RayShade(std::string& s)
   {
     this->tgt_ = s;
   };
@@ -43,15 +45,15 @@ public:
   }
   inline virtual void open() {}
   inline virtual void close() {}
-  inline virtual string alias()
+  inline virtual std::string alias()
   {
     return "";
   }
-  inline virtual string ctrl_()
+  inline virtual std::string ctrl_()
   {
     return this->tgt_;
   }
-  inline virtual void ctrl(string& c)
+  inline virtual void ctrl(std::string& c)
   {
     this->tgt_ = c;
   }
@@ -77,15 +79,15 @@ public:
     return this->o_ ;
   }
 
-  inline virtual void ctrlDtx(string& o)
+  inline virtual void ctrlDtx(std::string& o)
   {
     this->vtx_ = o;
   }
-  inline virtual void streamID(vector<unsigned char> o)
+  inline virtual void streamID(std::vector<unsigned char> o)
   {
     this->stream_id = o;
   }
-  inline virtual vector<unsigned char> streamID()
+  inline virtual std::vector<unsigned char> streamID()
   {
     return this->stream_id;
   }
@@ -106,9 +108,9 @@ private:
   }
 
   int l7_;
-  string tgt_;
+  std::string tgt_;
   uint160 o_;
-  string vtx_;
-  vector<unsigned char> stream_id;
+  std::string vtx_;
+  std::vector<unsigned char> stream_id;
 };
 

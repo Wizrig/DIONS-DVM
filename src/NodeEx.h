@@ -3,7 +3,6 @@
 #include "Twister.h"
 #include <vector>
 
-using namespace::std;
 
 struct __BASE__
 {
@@ -99,7 +98,7 @@ private:
   __BASE__ g_;
   int s_base_;
   int corr_;
-  vector<unsigned char> nList;
+  std::vector<unsigned char> nList;
   NRelay rel_;
 };
 
@@ -150,6 +149,6 @@ private:
   int lMap_;
   int locatorRelay_;
   NRelay relay_;
-  vector<unsigned char> buffer_;
+  std::vector<unsigned char> buffer_;
 };
 
