@@ -93,12 +93,6 @@ typedef struct Spectra
   FI2__ dim_;
 } spec;
 
-std::vector<double> f_dist(std::vector<unsigned char>& in);
-double s_entropy(std::vector<double> v);
-
-void trans(std::vector<unsigned char>, unsigned char (*f)(unsigned char));
-void transHom(std::vector<unsigned char>, unsigned char (*f)(unsigned char), unsigned char (*g)(unsigned char));
-void transHomExt(std::vector<unsigned char>, unsigned char (*f)(unsigned char), unsigned char (*g)(unsigned char));
 class SpecExec
 {
 public:
