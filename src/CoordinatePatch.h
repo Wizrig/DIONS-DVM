@@ -4,6 +4,8 @@
 
 #include "InterfaceCrypt.h"
 #include "State.h"
+#include <string>
+#include <vector>
 
 class CoordinatePatch : InterfaceCrypt
 {
@@ -12,7 +14,7 @@ public:
   {
   }
 
-  CoordinatePatch(string& s)
+  CoordinatePatch(std::string& s)
   {
     this->r_ = s;
   };
@@ -40,24 +42,24 @@ public:
   inline virtual void burstTx(BurstBuffer& d) { }
   inline virtual void open() {}
   inline virtual void close() {}
-  inline virtual string alias()
+  inline virtual std::string alias()
   {
     return "";
   }
-  inline virtual string ctrl_()
+  inline virtual std::string ctrl_()
   {
     return this->r_;
   }
-  inline virtual void ctrl(string& c)
+  inline virtual void ctrl(std::string& c)
   {
     this->r_ = c;
   }
 
 
 private:
-  string r_;
-  string locator_;
-  vector<unsigned int> connectionVector_;
+  std::string r_;
+  std::string locator_;
+  std::vector<unsigned int> connectionVector_;
 };
 
 #endif

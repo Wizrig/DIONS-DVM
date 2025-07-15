@@ -55,7 +55,7 @@ unsigned char base(unsigned char a, unsigned char (*s)(unsigned char), int pos)
 {
   return (*s)(pos)^a;
 }
-void transHomExt(vector<unsigned char>& data, unsigned char (*f)(unsigned char), unsigned char (*g)(unsigned char))
+void transHomExt(std::vector<unsigned char>& data, unsigned char (*f)(unsigned char), unsigned char (*g)(unsigned char))
 {
   for(unsigned i = 0; i<data.size(); i++)
   {
@@ -69,7 +69,7 @@ void transHomExt(vector<unsigned char>& data, unsigned char (*f)(unsigned char),
     data[i] = d;
   }
 }
-void transHom(vector<unsigned char>& data, unsigned char (*f)(unsigned char), unsigned char (*g)(unsigned char))
+void transHom(std::vector<unsigned char>& data, unsigned char (*f)(unsigned char), unsigned char (*g)(unsigned char))
 {
   for(unsigned i = 0; i<data.size(); i++)
   {
@@ -83,7 +83,7 @@ void transHom(vector<unsigned char>& data, unsigned char (*f)(unsigned char), un
     data[i] = d;
   }
 }
-void trans(vector<unsigned char>& data, unsigned char (*f)(unsigned char))
+void trans(std::vector<unsigned char>& data, unsigned char (*f)(unsigned char))
 {
   for(unsigned i = 0; i<data.size(); i++)
   {
@@ -97,9 +97,9 @@ void trans(vector<unsigned char>& data, unsigned char (*f)(unsigned char))
     data[i] = d;
   }
 }
-vector<double> f_dist(vector<unsigned char>& in)
+std::vector<double> f_dist(std::vector<unsigned char>& in)
 {
-  vector<double> fdist;
+  std::vector<double> fdist;
   fdist.resize(256);
 
   for(unsigned i = 0; i<in.size(); i++)
@@ -114,7 +114,7 @@ vector<double> f_dist(vector<unsigned char>& in)
 
   return fdist;
 }
-double s_entropy(vector<double>& v)
+double s_entropy(std::vector<double>& v)
 {
   double entropy = 0;
   double p;
@@ -133,7 +133,7 @@ double s_entropy(vector<double>& v)
 
   return -entropy;
 }
-void rms(const string& s, string& r)
+void rms(const std::string& s, std::string& r)
 {
   for(unsigned int i=0; i<s.size(); i++)
   {
@@ -183,11 +183,11 @@ void hPerm(int s, int n, void (*p)(int), void (*inv)(int, int), void (*center)(i
     }
   }
 }
-double ic(const string& t)
+double ic(const std::string& t)
 {
-  string text;
+  std::string text;
   rms(t, text);
-  vector<double> freq(256,0);
+  std::vector<double> freq(256,0);
 
   for(unsigned int i=0; i<text.size(); i++)
   {
@@ -243,25 +243,25 @@ std::tuple<int, int, int> extended_gcd(int __alpha, int __beta, int (*col)(int x
 {
   if(__alpha == 0)
   {
-    return make_tuple(__beta,0,1);
+    return std::make_tuple(__beta,0,1);
   }
 
   int __com=0;
   int x=0;
   int y=0;
-  tie(__com, x, y) = extended_gcd(__beta%__alpha, __alpha, col);
-  return make_tuple(__com, y-(__beta/__alpha)*x, x);
+  std::tie(__com, x, y) = extended_gcd(__beta%__alpha, __alpha, col);
+  return std::make_tuple(__com, y-(__beta/__alpha)*x, x);
 }
 std::tuple<int, int, int> extended_gcd(int __alpha, int __beta)
 {
   if(__alpha == 0)
   {
-    return make_tuple(__beta,0,1);
+    return std::make_tuple(__beta,0,1);
   }
 
   int __com=0;
   int x=0;
   int y=0;
-  tie(__com, x, y) = extended_gcd(__beta%__alpha, __alpha);
-  return make_tuple(__com, y-(__beta/__alpha)*x, x);
+  std::tie(__com, x, y) = extended_gcd(__beta%__alpha, __alpha);
+  return std::make_tuple(__com, y-(__beta/__alpha)*x, x);
 }

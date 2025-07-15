@@ -4,6 +4,9 @@
 //XXXX PRAGMA
 
 #include "InterfaceCrypt.h"
+#include <string>
+#include <vector>
+#include <algorithm>
 
 class CoordinateVector : InterfaceCrypt
 {
@@ -12,7 +15,7 @@ public:
   {
   }
 
-  CoordinateVector(string& s)
+  CoordinateVector(std::string& s)
   {
     this->r_ = s;
   };
@@ -27,23 +30,23 @@ public:
   }
   inline virtual void open() {}
   inline virtual void close() {}
-  inline virtual string alias()
+  inline virtual std::string alias()
   {
     return "";
   }
-  inline virtual string ctrl_()
+  inline virtual std::string ctrl_()
   {
     return this->r_;
   }
-  inline virtual void ctrl(string& c)
+  inline virtual void ctrl(std::string& c)
   {
     this->r_ = c;
   }
 
-  inline bool mapNode(string l, int& p)
+  inline bool mapNode(std::string l, int& p)
   {
-    vector<string>::iterator iter;
-    iter=find(this->d1_.begin(),this->d1_.end(),l);
+    std::vector<std::string>::iterator iter;
+    iter=std::find(this->d1_.begin(),this->d1_.end(),l);
     if(iter != this->d1_.end())
     {
       p = iter - this->d1_.begin();
@@ -61,19 +64,19 @@ public:
   {
     return this->d1_.size() == 0;
   }
-  inline string& domainImage()
+  inline std::string& domainImage()
   {
     return this->d0_.back();
   }
-  inline string& codomainImage()
+  inline std::string& codomainImage()
   {
     return this->d1_.back();
   }
-  inline void domain(string s)
+  inline void domain(std::string s)
   {
     this->d0_.push_back(s);
   }
-  inline void codomain(string s)
+  inline void codomain(std::string s)
   {
     this->d1_.push_back(s);
   }
@@ -85,10 +88,10 @@ public:
   )
 
 private:
-  string r_;
-  string locator_;
-  vector<string> d0_;
-  vector<string> d1_;
+  std::string r_;
+  std::string locator_;
+  std::vector<std::string> d0_;
+  std::vector<std::string> d1_;
 };
 
 #endif

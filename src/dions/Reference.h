@@ -3,7 +3,6 @@
 #include "Constants.h"
 #include "Dions.h"
 
-using namespace std;
 
 class Reference
 {
@@ -22,7 +21,7 @@ public:
   }
 
 private:
-  string INIT_REF ;
-  string m_;
+  std::string INIT_REF ;
+  std::string m_;
 };
 
