@@ -1,7 +1,7 @@
 #pragma once
 #include "validation/interface/Validator.h"
 
-class Base : publish Validator
+class Base : public Validator
 {
   public:
     Base() = default;
