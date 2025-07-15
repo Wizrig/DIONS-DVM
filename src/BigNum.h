@@ -524,12 +524,21 @@ public:
       std::ostringstream os;
       os << n;
       BIGNUM* n_big = BN_new();
+      if (n_big == NULL)
+      {
+        throw bignum_error("CBigNum::SetHex() : BN_new failed");
+      }
       BN_dec2bn(&n_big, os.str().c_str());
       BN_add(this->bn_, this->bn_, n_big);
+      BN_free(n_big);
     }
     if (fNegative)
     {
       BIGNUM* zero = BN_new();
+      if (zero == NULL)
+      {
+        throw bignum_error("CBigNum::SetHex() : BN_new failed");
+      }
       BN_zero(zero);
       BN_sub(this->bn_, zero, this->bn_);
       BN_free(zero);
